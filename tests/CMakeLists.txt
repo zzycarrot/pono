@@ -5,7 +5,7 @@ option(SYSTEM_GTEST "Should we try to use the system GTest" ON)
 
 if(SYSTEM_GTEST)
   # try finding a system installation of googletest
-  find_package(GTest 1.14 CONFIG)
+  find_package(GTest CONFIG)
 else()
   set(GTest_FOUND FALSE)
 endif()
@@ -36,7 +36,10 @@ if(NOT GTest_FOUND)
     ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
     EXCLUDE_FROM_ALL
   )
+  set(PONO_GTEST_LIBS gtest gtest_main)
 else()
+  set(PONO_GTEST_LIBS GTest::gtest GTest::gtest_main)
+  set(PONO_GTEST_RPATH "$<TARGET_FILE_DIR:GTest::gtest_main>")
 endif()
 if(WITH_MSAT)
   add_definitions(-DWITH_MSAT)
@@ -58,8 +61,11 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 
 macro(pono_add_test name)
   add_executable(${name} "${CMAKE_CURRENT_SOURCE_DIR}/${name}.cpp")
-  target_link_libraries(${name} gtest gtest_main)
+  target_link_libraries(${name} ${PONO_GTEST_LIBS})
   target_link_libraries(${name} pono-test-lib) # also includes pono-lib because it's linked
+  if(PONO_GTEST_RPATH)
+    set_target_properties(${name} PROPERTIES BUILD_RPATH "${PONO_GTEST_RPATH}")
+  endif()
   add_dependencies(check ${name})
   add_test(NAME ${name} COMMAND ${name})
 endmacro()

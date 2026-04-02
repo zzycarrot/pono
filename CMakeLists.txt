@@ -65,6 +65,8 @@ if(WITH_PROFILING)
 endif()
 
 if(APPLE)
+  list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/bison")
+  list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/flex")
   list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/bison")
   list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/flex")
 endif()

@@ -21,7 +21,7 @@ dependencies = ["smt-switch"]
 test = ["pytest"]
 
 [project.urls]
-Homepage = "https://github.com/stanford-centaur/pono"
+Homepage = "https://github.com/zzycarrot/pono"
 
 [tool.setuptools]
 packages = ["pono"]

@@ -1,5 +1,5 @@
-[![CI](https://github.com/stanford-centaur/pono/actions/workflows/ci.yml/badge.svg)](https://github.com/stanford-centaur/pono/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://github.com/stanford-centaur/pono/blob/main/LICENSE)
+[![CI](https://github.com/zzycarrot/pono/actions/workflows/ci.yml/badge.svg)](https://github.com/zzycarrot/pono/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://github.com/zzycarrot/pono/blob/main/LICENSE)
 
 # Pono: A Flexible and Extensible SMT-Based Model Checker
 

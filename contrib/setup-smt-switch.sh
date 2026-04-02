@@ -25,10 +25,58 @@ die() {
   exit 1
 }
 
+require_program() {
+  command -v "$1" >/dev/null 2>&1 \
+    || die "missing required program '$1'; install it first (e.g. in .build-venv or via your package manager)"
+}
+
 # Navigate to source root
 working_dir=$(pwd)
 cd "$(dirname "${BASH_SOURCE[0]}")"
 cd ..
+pono_dir=$(pwd)
+
+activate_local_build_tools() {
+  local build_tool_dir="${pono_dir}/.build-venv/bin"
+  if [[ -d "$build_tool_dir" ]]; then
+    export PATH="$build_tool_dir:$PATH"
+  fi
+}
+
+ensure_bitwuzla_installed() {
+  local install_dir source_dir bitwuzla_pc symfpu_dir
+  install_dir="$(pwd)/deps/install"
+  source_dir="$(pwd)/deps/bitwuzla"
+  bitwuzla_pc="${install_dir}/lib/pkgconfig/bitwuzla.pc"
+  symfpu_dir="${source_dir}/subprojects/symfpu"
+
+  if [[ -f "$bitwuzla_pc" ]]; then
+    return
+  fi
+
+  activate_local_build_tools
+  require_program meson
+  require_program ninja
+
+  if [[ -d "$source_dir" ]]; then
+    echo "Bitwuzla sources already exist but install artifacts are missing; rebuilding in place."
+    if [[ -d "$symfpu_dir" && ! -f "${symfpu_dir}/meson.build" ]]; then
+      echo "Removing stale SymFPU checkout from a previous failed build."
+      rm -rf "$symfpu_dir"
+    fi
+    (
+      cd "$source_dir"
+      ./configure.py --wipe --prefix "$install_dir"
+      meson compile -C build
+      meson install -C build
+    )
+  else
+    ./contrib/setup-bitwuzla.sh
+  fi
+
+  [[ -f "$bitwuzla_pc" ]] \
+    || die "bitwuzla setup did not produce ${bitwuzla_pc}"
+}
 
 # Parse options
 conf_opts=()
@@ -81,6 +129,21 @@ while (($# > 0)); do
   shift
 done
 
+if [[ $(uname) == Darwin ]]; then
+  for brew_prefix in /opt/homebrew/opt /usr/local/opt; do
+    if [[ -d "${brew_prefix}/bison" ]]; then
+      conf_opts+=(--bison-dir="${brew_prefix}/bison")
+      break
+    fi
+  done
+  for brew_prefix in /opt/homebrew/opt /usr/local/opt; do
+    if [[ -d "${brew_prefix}/flex" ]]; then
+      conf_opts+=(--flex-dir="${brew_prefix}/flex")
+      break
+    fi
+  done
+fi
+
 # Download code if needed and check out correct version
 mkdir -p deps
 cd deps
@@ -90,8 +153,10 @@ fi
 cd smt-switch
 git checkout -f "$smt_switch_version" || echo "warning: smt-switch folder is not a git repo"
 
+export PKG_CONFIG_PATH="$(pwd)/deps/install/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
 # Build dependencies
-./contrib/setup-bitwuzla.sh
+ensure_bitwuzla_installed
 if [[ $cvc5_home == default ]]; then
   ./contrib/setup-cvc5.sh
 fi
@@ -103,11 +168,7 @@ if [[ $with_z3 == true ]]; then
 fi
 
 # Configure, build, test, and install smt-switch
-if [[ -d build ]]; then
-  echo "$(pwd)/build already exists, please remove it manually if you want to reconfigure smt-switch"
-else
-  ./configure.sh --prefix=local --static --smtlib-reader --bitwuzla --cvc5 ${conf_opts[@]+"${conf_opts[@]}"}
-fi
+./configure.sh --prefix=local --static --smtlib-reader --bitwuzla --cvc5 ${conf_opts[@]+"${conf_opts[@]}"}
 cd build
 cmake --build . -j
 ctest -j

@@ -112,10 +112,9 @@ setup(
     ext_modules=[CMakeExtension('pono')],
     cmdclass=dict(build_ext=CMakeBuild),
     long_description='python bindings for Pono (next generation of CoSA)',
-    url='https://github.com/upscale-project/pono',
+    url='https://github.com/zzycarrot/pono',
     license='BSD',
     install_requires=['smt-switch'],
     tests_require=['pytest'],
     zip_safe=False,
 )
-
